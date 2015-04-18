@@ -11,20 +11,20 @@
 #include <netinet/in.h>  // define internet socket 
 #include <netdb.h>       // define internet socket 
 #include <thread>
+#include <vector>
+#include <mutex>
 
-#DEFINE SERVER_PORT 3932
-#DEFINE MAXNUMCLIENTS 10
+#define SERVER_PORT 3932
+#define MAXNUMCLIENTS 10
 
 using namespace std;
-
-void clientHandler(Client Client, vector<Client> * clientList, vector<thread> * threadList);
 
 //*************
 // Client Def
 //*************
 typedef struct Client {
   //Stores the size of the address of the client
-  socklen_t clientAddrlen;
+  socklen_t clientAddrLen;
   
   //Client Address
   struct sockaddr_in clientAddress;
@@ -50,6 +50,8 @@ void error(const char *msg)
   perror(msg);
   exit(1);
 }
+
+void clientHandler(Client Client, vector<Client> * clientList, vector<thread> * threadList);
   
 //***************
 //     MAIN
@@ -69,7 +71,7 @@ int main()
   //Clients
   Client tempClient;
   tempClient.clientAddress = {AF_INET};
-  tempClient.clientAddrLen = sizeof(_Clients[i].clientAddress);
+  tempClient.clientAddrLen = sizeof(tempClient.clientAddress);
   vector<Client> Clients;
   
   /*for (int i = 0; i < MAXNUMCLIENTS; i++) {
@@ -93,7 +95,7 @@ int main()
   //SETTING THE VARIABLES IN SERVERADDRESS
   serverAddress.sin_family = AF_INET;
   serverAddress.sin_port = htons(SERVER_PORT);
-  serverAddress.sin_adr.s_addr = INADDR_ANY;
+  serverAddress.sin_addr.s_addr = INADDR_ANY;
   
   //Bind the socket for the server to an internet port
   if (bind(socket_fd, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0)
