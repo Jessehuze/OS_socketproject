@@ -19,7 +19,7 @@ using namespace std;
 
 
 //*************
-// Client def
+// Client Def
 //*************
 typedef struct Client {
   //Stores the size of the address of the client
@@ -33,11 +33,24 @@ typedef struct Client {
   
   //Number of chars read into buffer
   int numCharRead;
+  
+  //Client File Descriptor
+  int clientFD;
+  
+  //Client Name
 } Client;
   
+//*************
+//    Error
+//*************  
+void error(const char *msg)
+{
+  perror(msg);
+  exit(1);
+}
   
 //***************
-// MAIN
+//     MAIN
 //***************
 int main()
 {
@@ -52,14 +65,17 @@ int main()
   int numCharWritten;
   
   //Clients
-  Client Client;
-  Client.clientAddress = {AF_INET};
-  Client.clientAddrLen = sizeof(_Clients[i].clientAddress);
-  num_clients = 0;
+  Client tempClient;
+  tempClient.clientAddress = {AF_INET};
+  tempClient.clientAddrLen = sizeof(_Clients[i].clientAddress);
+  vector<Client> Clients;
   
   /*for (int i = 0; i < MAXNUMCLIENTS; i++) {
     _Clients[i].clientAddress = {AF_INET};
     _Clients[i].clientAddrLen = sizeof(_Clients[i].clientAddress);*/
+    
+  //Thread Vector
+  vector<thread> threads;
     
   //Mutex for thread locking
   mutex mutex;
@@ -86,15 +102,28 @@ int main()
     error("SERVER: Error on listen");
   
   //SERVER ACCEPT LOOP: Wait for connection and fork thread upon connection
-  while ((newsocket_fd = accept(socket_fd, (struct sockaddr *) &Client.clientAddress, 
-                                                        &Client.clientAddrLen))
+  while ((newsocket_fd = accept(socket_fd, (struct sockaddr *) &tempClient.clientAddress, &tempClient.clientAddrLen))
     if (newsocket_fd < 0)
       error("SERVER: Accept failed"); //Exit Program
+    //Lock Variables
+    mutex.lock();
+    if (Clients.size >= MAXNUMCLIENTS)
+      cout << "Client attempted to connect, but server is full" << endl;
+    else
+    {
+      tempClient.clientFD = newsocket_fd;
+      Clients.push_back(tempClient); //Adding temp client to list
+      threads.push_back(thread(clientHandler(tempClient))); //New Thread
+    }
+    mutex.unlock(); //Unlock
+  }
   
-    
-  
-  
-  
+  //Interrupt Handling
   
   return 0;
+}
+
+void clientHandler(Client Client)
+{
+  
 }
