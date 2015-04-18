@@ -51,7 +51,7 @@ void error(const char *msg)
   exit(1);
 }
 
-void clientHandler(Client Client, vector<Client> * clientList, vector<thread> * threadList);
+void clientHandler(Client Client, vector<struct Client> * clientList, vector<thread> * threadList);
   
 //***************
 //     MAIN
@@ -106,18 +106,18 @@ int main()
     error("SERVER: Error on listen");
   
   //SERVER ACCEPT LOOP: Wait for connection and fork thread upon connection
-  while ((newsocket_fd = accept(socket_fd, (struct sockaddr *) &tempClient.clientAddress, &tempClient.clientAddrLen))
+  while ((newsocket_fd = accept(socket_fd, (struct sockaddr *) &tempClient.clientAddress, &tempClient.clientAddrLen))) 
     if (newsocket_fd < 0)
       error("SERVER: Accept failed"); //Exit Program
     //Lock Variables
     mutex.lock();
-    if (Clients.size >= MAXNUMCLIENTS)
+    if (Clients.size() >= MAXNUMCLIENTS)
       cout << "Client attempted to connect, but server is full" << endl;
     else
     {
       tempClient.clientFD = newsocket_fd;
       Clients.push_back(tempClient); //Adding temp client to list
-      threads.push_back(thread(clientHandler(tempClient, Clients, threads))); //New Thread
+      threads.push_back(thread(clientHandler(tempClient, &Clients, threads))); //New Thread
     }
     mutex.unlock(); //Unlock
   }
@@ -129,12 +129,13 @@ int main()
 
 void clientHandler(Client Client, vector<Client> * clientList, vector<thread> * threadList)
 {
+  mutex mutex;
   read(Client.clientFD, Client.name, sizeof(Client.name));
   printf("%s has entered the chat room!\n", Client.name);
   while (read(Client.clientFD, Client.buffer, sizeof(Client.buffer)))
   {
     printf("%s: %s\n", Client.name, Client.buffer);
-    temp_buff[544];
+    char temp_buff[544];
     snprintf(temp_buff, sizeof(temp_buff), "%s: %s", Client.name, Client.buffer);
     int messageLength = -1;
     for (int i = 0; i < sizeof(temp_buff); i++)
