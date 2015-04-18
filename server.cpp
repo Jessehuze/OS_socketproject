@@ -107,6 +107,7 @@ int main()
   
   //SERVER ACCEPT LOOP: Wait for connection and fork thread upon connection
   while ((newsocket_fd = accept(socket_fd, (struct sockaddr *) &tempClient.clientAddress, &tempClient.clientAddrLen))) 
+  {
     if (newsocket_fd < 0)
       error("SERVER: Accept failed"); //Exit Program
     //Lock Variables
@@ -117,7 +118,7 @@ int main()
     {
       tempClient.clientFD = newsocket_fd;
       Clients.push_back(tempClient); //Adding temp client to list
-      threads.push_back(thread(clientHandler(tempClient, &Clients, threads))); //New Thread
+      threads.push_back(thread(clientHandler(tempClient, &Clients, &threads))); //New Thread
     }
     mutex.unlock(); //Unlock
   }
@@ -127,7 +128,7 @@ int main()
   return 0;
 }
 
-void clientHandler(Client Client, vector<Client> * clientList, vector<thread> * threadList)
+void clientHandler(Client Client, vector<struct Client> * clientList, vector<thread> * threadList)
 {
   mutex mutex;
   read(Client.clientFD, Client.name, sizeof(Client.name));
