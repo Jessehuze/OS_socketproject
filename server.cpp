@@ -7,9 +7,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/socket.h>  /* define socket */
-#include <netinet/in.h>  /* define internet socket */
-#include <netdb.h>       /* define internet socket */
+#include <sys/socket.h>  // define socket 
+#include <netinet/in.h>  // define internet socket 
+#include <netdb.h>       // define internet socket 
 #include <thread>
 
 #DEFINE SERVER_PORT 3932
@@ -17,6 +17,7 @@
 
 using namespace std;
 
+void clientHandler(Client Client, vector<Client> * clientList, vector<thread> * threadList);
 
 //*************
 // Client Def
@@ -38,6 +39,7 @@ typedef struct Client {
   int clientFD;
   
   //Client Name
+  char name[32];
 } Client;
   
 //*************
@@ -98,7 +100,7 @@ int main()
     error("SERVER: Error on binding"); //Exit Program
   
   //Listen to the server socket for connecting clients
-  if (listen(socket_fd, 5) < 0) //Can have a max of 5 connecting clients while handling other code
+  if (listen(socket_fd, 4) < 0) //Can have a max of 4 connecting clients while handling other code
     error("SERVER: Error on listen");
   
   //SERVER ACCEPT LOOP: Wait for connection and fork thread upon connection
@@ -113,7 +115,7 @@ int main()
     {
       tempClient.clientFD = newsocket_fd;
       Clients.push_back(tempClient); //Adding temp client to list
-      threads.push_back(thread(clientHandler(tempClient))); //New Thread
+      threads.push_back(thread(clientHandler(tempClient, Clients, threads))); //New Thread
     }
     mutex.unlock(); //Unlock
   }
@@ -123,7 +125,29 @@ int main()
   return 0;
 }
 
-void clientHandler(Client Client)
+void clientHandler(Client Client, vector<Client> * clientList, vector<thread> * threadList)
 {
-  
+  read(Client.clientFD, Client.name, sizeof(Client.name));
+  printf("%s has entered the chat room!\n", Client.name);
+  while (read(Client.clientFD, Client.buffer, sizeof(Client.buffer)))
+  {
+    printf("%s: %s\n", Client.name, Client.buffer);
+    temp_buff[544];
+    snprintf(temp_buff, sizeof(temp_buff), "%s: %s", Client.name, Client.buffer);
+    int messageLength = -1;
+    for (int i = 0; i < sizeof(temp_buff); i++)
+    {
+      if (temp_buff[i] == NULL)
+      {
+        messageLength = i;
+        break;
+      }
+    }
+    mutex.lock();
+    for (int i = 0; i < clientList; i++)
+    {
+      write(clientList[i].clientFD, temp_buff, messageLength);
+    }
+    mutex.unlock();
+  }
 }
