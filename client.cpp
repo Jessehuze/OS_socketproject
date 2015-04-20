@@ -66,7 +66,8 @@ int main()
 	}
 	
 	//get ready to connect the server
-	struct serverSockAddr = {AF_INET, htons(port)};
+	//struct serverSockAddr = {AF_INET, htons(port)};
+	serverSockAddr = {AF_INET, htons(port)};
 	struct hostent* hp; 
 	
     /* get the host */
@@ -76,7 +77,7 @@ int main()
 		printf(" %s Err: unknown host\n",  hostName ); 
 		exit(1); 
     } 
-    bcopy( hp->h_addr_list[0], (char*)&server_addr.sin_addr, hp->h_length ); 
+    bcopy( hp->h_addr_list[0], (char*)&serverSockAddr.sin_addr, hp->h_length ); 
  
     /* create stream socket */ 
     if( ( socketFileDescriptor = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 ) 
