@@ -30,7 +30,7 @@ using namespace std;
 #define SERVER_PORT 3932     // define a server port number 
  
  //for the handling of ctrl+c
- void SignalHandler(int sig, siginfo_t *si, void *context)
+ void SignalHandler(int sig)
  {
 	if(SIGINT)
 	{
@@ -100,23 +100,34 @@ int main()
     printf("connect() successful! will send a message to server\n"); 
     printf("Input a string:\n" ); 
 	
+	//watch for the ctrl+c interupt
+	signal(SIGINT, &SignalHandler);
+	
+	
 	//send the clients name to the server
 	char myName[ ] = clientNickname.c_str();
 	write(socketFileDescriptor, myName, sizeof(myName));
 	
     while( gets(buf) != NULL) 
     { 
+		//write the username
+		cout << clientNickname << ": " <<endl;
+		
+		//for the exit command 
+		if (strcmp(buf, "/exit") == 0 || strcmp(buf, "/quit") == 0 || strcmp(buf, "/part") == 0)
+		{
+			shutdown(socketfd, SHUT_RDWR);
+			return 0;
+		}
+		
+		//otherwise send and recieve that data as normal
 		write(socketFileDescriptor, buf, sizeof(buf));
 		read(socketFileDescriptor, buf, sizeof(buf)); 
-		printf("SERVER ECHOED: %s\n", buf); 
-		
-		//write if to exit the server
-		
-		//write if for the handling of ctrl + c
+		printf("SERVER ECHOED: %s\n", buf); 		
     } 
 	
 	//get ready to exit the program
 	pthread_exit(fromServerThread);
-    close(socketFileDescriptor;); 
+    close(socketFileDescriptor;)
     return(0); 
 } 
