@@ -13,8 +13,10 @@
 /*   TO RUN:     client  server-machine-name                            */ 
 /*                                                                      */ 
 /************************************************************************/ 
- 
+#include <iostream> 
 #include <stdio.h> 
+#include <cstdlib>
+#include <csignal>
 #include <sys/types.h> 
 #include <unistd.h>
 #include <stdlib.h>
@@ -38,23 +40,34 @@ using namespace std;
 	}
 	return;
  }
- 
- 
+ /*
+ void* readServer(void* dmyptr)
+ {
+	char buf[256];
+	memset(buf, '\0', 256);
+	bool close = false;
+	
+	while(read(socketFileDescriptor, buf, 255))
+	{
+		if(strlen(buf) == 11 && strcmp(strstr(buffer, " *"), " *") == 0)
+		{
+			
+		}
+	}
+	return;
+ }
+*/
 int main() 
 { 
     int socketFileDescriptor; 
-    struct sockaddr_in server_addr = { AF_INET, htons( SERVER_PORT ) }; 
     char buf[512]; 
-    struct hostent *hp; 
+	char clientNickname[64];
+	char clientRemove[64]
+	char hostName[64];
+	struct hostent* hp; 
 	thread fromServerThread; // waits for input from server and prints it to the screen
-	string clientNickname = "";
-	string hostName="";
-	//for interupt handling
-	struct sigAction sVal;
-
-	//show that we are using a dfiferent signal handler which takes 3 args
-	sval.sa_flags = SA_SIGINFO;
-	sval.sa_sigaction = HandleSignal;
+	SignalHandler(SIGINT, &interuptHandler);//for interupt handling
+	
 	
 	//Get the server and client nickname
 	cout << "Please enter a server name: ";
@@ -74,41 +87,51 @@ int main()
 		printf("The hostname was left blank");
 	}
  
-    /* get the host */ 
+    /* get the host */
     if( ( hp = gethostbyname(hostName) ) == NULL ) 
     { 
-		printf(" %s unknown host\n",  hostName ); 
+		printf(" %s Err: unknown host\n",  hostName ); 
 		exit(1); 
     } 
     bcopy( hp->h_addr_list[0], (char*)&server_addr.sin_addr, hp->h_length ); 
  
-    /* create a socket */ 
-    if( ( socketFileDescriptor; = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 ) 
+    /* create stream socket */ 
+    if( ( socketFileDescriptor = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 ) 
     { 
 		perror( "client: socket failed" ); 
 		exit( 1 ); 
     } 
- 
-    /* connect a socket */ 
-    if( connect( socketFileDescriptor;, (struct sockaddr*)&server_addr, 
-		 sizeof(server_addr) ) == -1 ) 
+    //connect it 
+    if( connect( socketFileDescriptor, (struct sockaddr*)&server_addr, sizeof(server_addr) ) == -1 ) 
     { 
 		perror( "client: connect FAILED:" ); 
 		exit( 1 ); 
     } 
 	
+	//connection is succesful, let client know that they have connected to the server correctly
     printf("connect() successful! will send a message to server\n"); 
     printf("Input a string:\n" ); 
+	
+	//Send the name of the client to the server
+	send(socketFileDescriptor, clientNickname, strlen(clientNickname), 0);
+	
+	/*
+	//make sure you can create a thread to read from the server
+	if(thread fromServerThread(readFromServer) != 0)//im not 100% sure on this one
+	{
+		perror("Read thread was not created!");
+		shutdown(socketFileDescriptor, SHUT_RDWR);
+		exit(1);
+	}
+	*/
 	
 	//watch for the ctrl+c interupt
 	signal(SIGINT, &SignalHandler);
 	
+	//send the client's nickname to the server
+	send(socketFileDescriptor, clientNickname, strlen(clientNickname), 0);
 	
-	//send the clients name to the server
-	char myName[ ] = clientNickname.c_str();
-	write(socketFileDescriptor, myName, sizeof(myName));
-	
-    while( gets(buf) != NULL) 
+    for(;;)
     { 
 		//write the username
 		cout << clientNickname << ": " <<endl;
@@ -116,18 +139,14 @@ int main()
 		//for the exit command 
 		if (strcmp(buf, "/exit") == 0 || strcmp(buf, "/quit") == 0 || strcmp(buf, "/part") == 0)
 		{
+			cout << "Thank you for using this chatroom" << endl;
 			shutdown(socketfd, SHUT_RDWR);
 			return 0;
 		}
 		
-		//otherwise send and recieve that data as normal
-		write(socketFileDescriptor, buf, sizeof(buf));
-		read(socketFileDescriptor, buf, sizeof(buf)); 
-		printf("SERVER ECHOED: %s\n", buf); 		
+		send(socketFileDescriptor, buf, strlen(buf), 0);
     } 
 	
-	//get ready to exit the program
-	pthread_exit(fromServerThread);
-    close(socketFileDescriptor;)
+	shutdown(socketFileDescriptor, SHUT_RDWR);
     return(0); 
 } 
