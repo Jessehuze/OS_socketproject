@@ -88,7 +88,7 @@ int main()
 		exit( 1 ); 
     } 
     //connect it 
-    if( connect( socketFileDescriptor, , sockAddr, sizeof(serverAddr) ) == -1 ) 
+    if( connect( socketFileDescriptor, serverAddr, sizeof(serverAddr) ) == -1 ) 
     { 
 		perror( "client: connect FAILED:" ); 
 		exit( 1 ); 
