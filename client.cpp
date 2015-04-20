@@ -106,7 +106,9 @@ int main()
     for(;;)
     { 
 		//write the username
-		cout << clientNickname << ": " <<endl;
+		cout << clientNickname << ": " ;
+		//get the messages
+		cin >> buffer;
 		
 		//for the exit command 
 		if (strcmp(buf, "/exit") == 0 || strcmp(buf, "/quit") == 0 || strcmp(buf, "/part") == 0)
@@ -116,7 +118,11 @@ int main()
 			return 0;
 		}
 		
+		//send the message
 		send(socketFileDescriptor, buf, strlen(buf), 0);
+		
+		//clear the buffer for the next message
+		memset(buf, '\0', 512);
     } 
 	
 	shutdown(socketFileDescriptor, SHUT_RDWR);
