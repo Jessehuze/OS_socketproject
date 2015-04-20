@@ -66,8 +66,7 @@ int main()
 	}
 	
 	//get ready to connect the server
-	//struct serverSockAddr = {AF_INET, htons(port)};
-	serverSockAddr = {AF_INET, htons(port)};
+	struct serverSockAddr = {AF_INET, htons(port)};
 	struct hostent* hp; 
 	
     /* get the host */
