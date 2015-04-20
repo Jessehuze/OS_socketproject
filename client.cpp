@@ -13,14 +13,15 @@
 /*   TO RUN:     client  server-machine-name                            */ 
 /*                                                                      */ 
 /************************************************************************/ 
- 
-#include <stdio.h> 
+#include <iostream> 
+#include <cstdlib>
+#include <csignal>
 #include <sys/types.h> 
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include unistd.h>
+#include <unistd.h>
 #include <sys/socket.h>  // define socket
 #include <netinet/in.h>  // define internet socket
 #include <netdb.h>       // define internet socket
@@ -31,31 +32,18 @@ using namespace std;
 #define SERVER_PORT 3932     // define a server port number 
  
  //for the handling of ctrl+c
- void SignalHandler(int sig, siginfo_t *si, void *context)
- {
-	if(SIGINT)
-	{
-		cout << "Please type /exit , /quit , or /part to leave the chat room" << endl;
-	}
-	return;
- }
- 
- 
+ void interruptHandler(int sig);
+  
 int main() 
 { 
     int socketFileDescriptor; 
-    struct sockaddr_in server_addr = { AF_INET, htons( SERVER_PORT ) }; 
     char buf[512]; 
-    struct hostent *hp; 
+	char clientNickname[64];
+	char clientRemove[64];
+	char hostName[64];
 	thread fromServerThread; // waits for input from server and prints it to the screen
-	string clientNickname = "";
-	string hostName="";
-	//for interupt handling
-	struct sigAction sVal;
-
-	//show that we are using a dfiferent signal handler which takes 3 args
-	sval.sa_flags = SA_SIGINFO;
-	sval.sa_sigaction = HandleSignal;
+	signal(SIGINT, &interruptHandler);//for interupt handling
+	struct sockaddr_in serverAddr;//Server Address
 	
 	//Get the server and client nickname
 	cout << "Please enter a server name: ";
@@ -65,59 +53,82 @@ int main()
 	cin >> clientNickname;
 	
 	//check to see that neither field was left plank
-  if(clientNickname == "") 
+
+//check that the nicknamefield isnt blank
+  if(strlen(clientNickname) == 0) 
   { 
-    printf("The Nickname Field was left blank!"); 
-    exit(1); 
+  printf("The Nickname Field was left blank!"); 
+  exit(1); 
   }
-	if(hostName == "")
+	//check to make sure the hostname wasnt left blank
+	if(strlen(hostName) == 0)
 	{
 		printf("The hostname was left blank");
+		exit(1);
 	}
- 
-    /* get the host */ 
-    if( ( hp = gethostbyname(hostName) ) == NULL ) 
+	
+	//get ready to connect the server
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = htons(SERVER_PORT);
+	serverAddr.sin_addr.s_addr = INADDR_ANY;
+	
+	struct hostent* hp; 
+	
+    /* get the host */
+	//if( ( hp = gethostbyname(hostName) ) == NULL )
+    if( (gethostbyname(hostName) ) == NULL ) 
     { 
-		printf(" %s unknown host\n",  hostName ); 
+		printf(" %s Err: unknown host\n",  hostName ); 
 		exit(1); 
     } 
-    bcopy( hp->h_addr_list[0], (char*)&server_addr.sin_addr, hp->h_length ); 
+    bcopy( hp->h_addr_list[0], (char*) &serverAddr.sin_addr, hp->h_length ); 
  
-    /* create a socket */ 
-    if( ( socketFileDescriptor; = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 ) 
+    /* create stream socket */ 
+    if( ( socketFileDescriptor = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 ) 
     { 
 		perror( "client: socket failed" ); 
 		exit( 1 ); 
     } 
- 
-    /* connect a socket */ 
-    if( connect( socketFileDescriptor;, (struct sockaddr*)&server_addr, 
-		 sizeof(server_addr) ) == -1 ) 
+    //connect it 
+    if( connect( socketFileDescriptor, (struct sockaddr*) &serverAddr, sizeof(serverAddr) ) == -1 ) 
     { 
 		perror( "client: connect FAILED:" ); 
 		exit( 1 ); 
     } 
 	
+	//connection is succesful, let client know that they have connected to the server correctly
     printf("connect() successful! will send a message to server\n"); 
     printf("Input a string:\n" ); 
 	
-	//send the clients name to the server
-	char myName[ ] = clientNickname.c_str();
-	write(socketFileDescriptor, myName, sizeof(myName));
+	//send the client's nickname to the server
+	send(socketFileDescriptor, clientNickname, strlen(clientNickname), 0);
 	
-    while( gets(buf) != NULL) 
+    for(;;)
     { 
-		write(socketFileDescriptor, buf, sizeof(buf));
-		read(socketFileDescriptor, buf, sizeof(buf)); 
-		printf("SERVER ECHOED: %s\n", buf); 
+		//write the username
+		cout << clientNickname << ": " <<endl;
 		
-		//write if to exit the server
+		//for the exit command 
+		if (strcmp(buf, "/exit") == 0 || strcmp(buf, "/quit") == 0 || strcmp(buf, "/part") == 0)
+		{
+			cout << "Thank you for using this chatroom" << endl;
+			shutdown(socketFileDescriptor, SHUT_RDWR);
+			return 0;
+		}
 		
-		//write if for the handling of ctrl + c
+		send(socketFileDescriptor, buf, strlen(buf), 0);
     } 
 	
-	//get ready to exit the program
-	pthread_exit(fromServerThread);
-    close(socketFileDescriptor;); 
+	shutdown(socketFileDescriptor, SHUT_RDWR);
     return(0); 
 } 
+
+
+void interruptHandler(int sig)
+ {
+	if(SIGINT)
+	{
+		cout << "Please type /exit , /quit , or /part to leave the chat room" << endl;
+	}
+	return;
+ }
