@@ -42,7 +42,7 @@ int main()
 	char hostName[64];
 	thread fromServerThread; // waits for input from server and prints it to the screen
 	signal(SIGINT, &interruptHandler);//for interupt handling
-	
+	struct sockaddr_in serverSockAddr;//Server Address
 	
 	//Get the server and client nickname
 	cout << "Please enter a server name: ";
@@ -66,7 +66,10 @@ int main()
 	}
 	
 	//get ready to connect the server
-	struct inSockAddr serverSockAddr = {AF_INET, htons(SERVER_PORT)};
+	serverSockAddr.sin_family = AF_INET;
+	serverSockAddr.sin_port = htons(SERVER_PORT);
+	serverSockAddr.sin_addr.s_addr = INADDR_ANY;
+	
 	struct hostent* hp; 
 	
     /* get the host */
@@ -85,7 +88,7 @@ int main()
 		exit( 1 ); 
     } 
     //connect it 
-    if( connect( socketFileDescriptor, (struct serverSockAddr*)&serverSockAddr, sizeof(serverSockAddr) ) == -1 ) 
+    if( connect( socketFileDescriptor, (struct serverSockAddr *) &serverSockAddr, sizeof(serverSockAddr) ) == -1 ) 
     { 
 		perror( "client: connect FAILED:" ); 
 		exit( 1 ); 
