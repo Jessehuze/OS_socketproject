@@ -31,17 +31,17 @@ using namespace std;
 #define SERVER_PORT 3932     // define a server port number 
  
  //for the handling of ctrl+c
- void SignalHandler(int sig);
+ void interruptHandler(int sig);
   
 int main() 
 { 
     int socketFileDescriptor; 
     char buf[512]; 
 	char clientNickname[64];
-	char clientRemove[64]
+	char clientRemove[64];
 	char hostName[64];
 	thread fromServerThread; // waits for input from server and prints it to the screen
-	SignalHandler(SIGINT, &interuptHandler);//for interupt handling
+	signal(SIGINT, &interruptHandler);//for interupt handling
 	
 	
 	//Get the server and client nickname
@@ -64,17 +64,14 @@ int main()
 		printf("The hostname was left blank");
 		exit(1);
 	}
- 
-	//set up the interupt to be ready at anytime
-	//used to avoid ctrl+c breaking the program
-	signal(SIGINT, &interuptHandler);
 	
 	//get ready to connect the server
 	struct sockaddr_in_server_addr = {AF_INET, htons(port)};
 	struct hostent* hp; 
 	
     /* get the host */
-    if( ( hp = gethostbyname(hostName) ) == NULL ) 
+	//if( ( hp = gethostbyname(hostName) ) == NULL )
+    if( (gethostbyname(hostName) ) == NULL ) 
     { 
 		printf(" %s Err: unknown host\n",  hostName ); 
 		exit(1); 
@@ -122,7 +119,7 @@ int main()
 } 
 
 
-void SignalHandler(int sig)
+void interruptHandler(int sig)
  {
 	if(SIGINT)
 	{
