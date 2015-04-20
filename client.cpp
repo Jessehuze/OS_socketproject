@@ -42,7 +42,7 @@ int main()
 	char hostName[64];
 	thread fromServerThread; // waits for input from server and prints it to the screen
 	signal(SIGINT, &interruptHandler);//for interupt handling
-	struct sockaddr_in serverSockAddr;//Server Address
+	struct sockaddr_in serverAddr;//Server Address
 	
 	//Get the server and client nickname
 	cout << "Please enter a server name: ";
@@ -66,9 +66,9 @@ int main()
 	}
 	
 	//get ready to connect the server
-	serverSockAddr.sin_family = AF_INET;
-	serverSockAddr.sin_port = htons(SERVER_PORT);
-	serverSockAddr.sin_addr.s_addr = INADDR_ANY;
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = htons(SERVER_PORT);
+	serverAddr.sin_addr.s_addr = INADDR_ANY;
 	
 	struct hostent* hp; 
 	
@@ -79,7 +79,7 @@ int main()
 		printf(" %s Err: unknown host\n",  hostName ); 
 		exit(1); 
     } 
-    bcopy( hp->h_addr_list[0], (char*) &serverSockAddr.sin_addr, hp->h_length ); 
+    bcopy( hp->h_addr_list[0], (char*) &serverAddr.sin_addr, hp->h_length ); 
  
     /* create stream socket */ 
     if( ( socketFileDescriptor = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 ) 
@@ -88,7 +88,7 @@ int main()
 		exit( 1 ); 
     } 
     //connect it 
-    if( connect( socketFileDescriptor, (struct serverSockAddr *) &serverSockAddr, sizeof(serverSockAddr) ) == -1 ) 
+    if( connect( socketFileDescriptor, , sockAddr, sizeof(serverAddr) ) == -1 ) 
     { 
 		perror( "client: connect FAILED:" ); 
 		exit( 1 ); 
