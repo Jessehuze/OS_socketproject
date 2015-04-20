@@ -66,7 +66,7 @@ int main()
 	}
 	
 	//get ready to connect the server
-	struct sockaddr_in_server_addr = {AF_INET, htons(port)};
+	struct serverSockAddr = {AF_INET, htons(port)};
 	struct hostent* hp; 
 	
     /* get the host */
@@ -85,7 +85,7 @@ int main()
 		exit( 1 ); 
     } 
     //connect it 
-    if( connect( socketFileDescriptor, (struct sockaddr*)&server_addr, sizeof(server_addr) ) == -1 ) 
+    if( connect( socketFileDescriptor, (struct serverSockAddr*)&server_addr, sizeof(server_addr) ) == -1 ) 
     { 
 		perror( "client: connect FAILED:" ); 
 		exit( 1 ); 
@@ -107,7 +107,7 @@ int main()
 		if (strcmp(buf, "/exit") == 0 || strcmp(buf, "/quit") == 0 || strcmp(buf, "/part") == 0)
 		{
 			cout << "Thank you for using this chatroom" << endl;
-			shutdown(socketfd, SHUT_RDWR);
+			shutdown(socketFileDescriptor, SHUT_RDWR);
 			return 0;
 		}
 		
