@@ -48,11 +48,24 @@ typedef struct Client {
 //*************  
 void error(const char *msg)
 {
-  cerr(msg);
+  perror(msg);
   exit(1);
 }
 
-void clientHandler(Client Client, vector<struct Client> * clientList, vector<thread> * threadList);
+void signalHandler(int signal);
+
+void clientHandler(Client& Client, vector <struct Client*>& clientList, vector<thread*>& threadList);
+
+//***************
+//    Globals
+//***************
+//Client List
+vector<Client*> clientList;
+
+//Thread Vector
+vector<thread> threads;
+
+int socket_fd;
   
 //***************
 //     MAIN
@@ -61,7 +74,7 @@ int main()
 {
   //VARIABLES
   //Socket & and New Socket File Descriptors
-  int socket_fd, newsocket_fd;
+  int newsocket_fd;
   
   //Server Address
   struct sockaddr_in serverAddress;
@@ -73,14 +86,10 @@ int main()
   Client tempClient;
   tempClient.clientAddress = {AF_INET};
   tempClient.clientAddrLen = sizeof(tempClient.clientAddress);
-  vector<Client> Clients;
-  
-  /*for (int i = 0; i < MAXNUMCLIENTS; i++) {
-    _Clients[i].clientAddress = {AF_INET};
-    _Clients[i].clientAddrLen = sizeof(_Clients[i].clientAddress);*/
+
     
   //Thread Vector
-  vector<thread> threads;
+  vector<thread*> threads;
     
   //Mutex for thread locking
   mutex mutex;
@@ -118,20 +127,23 @@ int main()
       error("SERVER: Accept failed"); //Exit Program
     //Lock Variables
     mutex.lock();
-    if (Clients.size() >= MAXNUMCLIENTS)
+    if (clientList.size() >= MAXNUMCLIENTS)
       cout << "Client attempted to connect, but server is full" << endl;
     else
     {
       tempClient.clientFD = newsocket_fd;
-      Clients.push_back(tempClient); //Adding temp client to list
-      threads.push_back(thread clientHandler(tempClient, &Clients, &threads)); //New Thread
+      clientList.push_back(&tempClient); //Adding temp client to list
+      thread temp([&] {clientHandler(std::ref(tempClient), std::ref(clientList), std::ref(threads));});
+      threads.push_back(&temp); //New Thread
     }
     mutex.unlock(); //Unlock
   }  
+  
+  shutdown(socket_fd, SHUT_RDWR);
   return 0;
 }
 
-void clientHandler(Client Client, vector<struct Client> * clientList, vector<thread> * threadList)
+void clientHandler(Client& Client, vector<struct Client*>& clientList, vector<thread*>& threadList)
 {
   mutex mutex;
   strcpy(Client.name, "");
@@ -140,39 +152,83 @@ void clientHandler(Client Client, vector<struct Client> * clientList, vector<thr
   
   strcpy(Client.buffer, "SERVER: ");
   strcat(Client.buffer, Client.name);
-  srtcat(Client.buffer, " has connected!");
+  strcat(Client.buffer, " has connected!");
   
-  sendToAll(Client.buffer);
   cout << Client.buffer << endl;
   
   mutex.lock();
-  for (int i = 0; i < clientList->size(); i++)
+  for (int i = 0; i < clientList.size(); i++)
   {
     send(clientList[i]->clientFD, Client.buffer, strlen(Client.buffer), 0);
   }
   mutex.unlock();
-  memset(Client.buffer, '\0', sizeof(Client.buffer));
   
   
   while (read(Client.clientFD, Client.buffer, sizeof(Client.buffer)))
   {
-    printf("%s: %s\n", Client.name, Client.buffer);
-    char temp_buff[544];
-    snprintf(temp_buff, sizeof(temp_buff), "%s: %s", Client.name, Client.buffer);
-    int messageLength = -1;
-    for (int i = 0; i < sizeof(temp_buff); i++)
-    {
-      if (temp_buff[i] == NULL)
-      {
-        messageLength = i;
-        break;
-      }
-    }
+    memset(Client.buffer, '\0', sizeof(Client.buffer));
+    strcpy(Client.buffer, Client.name);
+    strcat(Client.buffer, ": ");
+    strcat(Client.buffer, Client.buffer);
+    
+    
     mutex.lock();
-    for (int i = 0; i < clientList; i++)
+    for (int i = 0; i < clientList.size(); i++)
     {
-      write(clientList[i].clientFD, temp_buff, messageLength);
+      if (clientList[i]->clientFD != Client.clientFD)
+      {
+        send(clientList[i]->clientFD, Client.buffer, strlen(Client.buffer), 0);
+      }
     }
     mutex.unlock();
   }
+  
+  //Upon disconnect
+  memset(Client.buffer, '\0', sizeof(Client.buffer));
+  strcpy(Client.buffer, "SERVER: ");
+  strcat(Client.buffer, Client.name);
+  strcat(Client.buffer, " has disconnected!");
+  
+  mutex.lock();
+  for (int i = 0; i < clientList.size(); i++)
+  {
+    send(clientList[i]->clientFD, Client.buffer, strlen(Client.buffer), 0);
+  }
+  mutex.unlock();
+  
+  for (int i = 0; i < clientList.size(); i++)
+  {
+    if (clientList[i]->clientFD == Client.clientFD)
+    {
+      clientList.erase(clientList.begin() + i);
+      threadList[i]->detach();
+      threadList.erase(threadList.begin() + i);
+      break;
+    }
+  }
+}
+
+//SIGNAL HANDLER
+void signalHandler(int signal) 
+{
+  char message[16];
+  mutex mutex;
+  strcpy(message, "Server is shutting down in 10 seconds!");
+  
+  mutex.lock();
+  for (int i = 0; i < clientList.size(); i++)
+  {
+    send(clientList[i]->clientFD, message, strlen(message), 0);
+  }
+  mutex.unlock();
+  
+  cout << "\b\bServer is shutting down..." << endl;
+  
+  sleep(10);
+  
+  shutdown(socket_fd, SHUT_RDWR);
+  
+  cout << "Server has shut down!" << endl;
+  
+  exit(0);
 }
