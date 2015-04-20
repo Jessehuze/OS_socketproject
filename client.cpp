@@ -14,7 +14,6 @@
 /*                                                                      */ 
 /************************************************************************/ 
 #include <iostream> 
-#include <stdio.h> 
 #include <cstdlib>
 #include <csignal>
 #include <sys/types.h> 
@@ -22,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include unistd.h>
+#include <unistd.h>
 #include <sys/socket.h>  // define socket
 #include <netinet/in.h>  // define internet socket
 #include <netdb.h>       // define internet socket
@@ -32,31 +31,8 @@ using namespace std;
 #define SERVER_PORT 3932     // define a server port number 
  
  //for the handling of ctrl+c
- void SignalHandler(int sig)
- {
-	if(SIGINT)
-	{
-		cout << "Please type /exit , /quit , or /part to leave the chat room" << endl;
-	}
-	return;
- }
- /*
- void* readServer(void* dmyptr)
- {
-	char buf[256];
-	memset(buf, '\0', 256);
-	bool close = false;
-	
-	while(read(socketFileDescriptor, buf, 255))
-	{
-		if(strlen(buf) == 11 && strcmp(strstr(buffer, " *"), " *") == 0)
-		{
-			
-		}
-	}
-	return;
- }
-*/
+ void SignalHandler(int sig);
+  
 int main() 
 { 
     int socketFileDescriptor; 
@@ -64,7 +40,6 @@ int main()
 	char clientNickname[64];
 	char clientRemove[64]
 	char hostName[64];
-	struct hostent* hp; 
 	thread fromServerThread; // waits for input from server and prints it to the screen
 	SignalHandler(SIGINT, &interuptHandler);//for interupt handling
 	
@@ -77,16 +52,27 @@ int main()
 	cin >> clientNickname;
 	
 	//check to see that neither field was left plank
-    if(clientNickname == "") 
+	//check that the nicknamefield isnt blank
+    if(strlen(clientNickname) == 0) 
     { 
 		printf("The Nickname Field was left blank!"); 
 		exit(1); 
     }
-	if(hostName == "")
+	//check to make sure the hostname wasnt left blank
+	if(strlen(hostName) == 0)
 	{
 		printf("The hostname was left blank");
+		exit(1);
 	}
  
+	//set up the interupt to be ready at anytime
+	//used to avoid ctrl+c breaking the program
+	signal(SIGINT, &interuptHandler);
+	
+	//get ready to connect the server
+	struct sockaddr_in_server_addr = {AF_INET, htons(port)};
+	struct hostent* hp; 
+	
     /* get the host */
     if( ( hp = gethostbyname(hostName) ) == NULL ) 
     { 
@@ -112,22 +98,6 @@ int main()
     printf("connect() successful! will send a message to server\n"); 
     printf("Input a string:\n" ); 
 	
-	//Send the name of the client to the server
-	send(socketFileDescriptor, clientNickname, strlen(clientNickname), 0);
-	
-	/*
-	//make sure you can create a thread to read from the server
-	if(thread fromServerThread(readFromServer) != 0)//im not 100% sure on this one
-	{
-		perror("Read thread was not created!");
-		shutdown(socketFileDescriptor, SHUT_RDWR);
-		exit(1);
-	}
-	*/
-	
-	//watch for the ctrl+c interupt
-	signal(SIGINT, &SignalHandler);
-	
 	//send the client's nickname to the server
 	send(socketFileDescriptor, clientNickname, strlen(clientNickname), 0);
 	
@@ -150,3 +120,13 @@ int main()
 	shutdown(socketFileDescriptor, SHUT_RDWR);
     return(0); 
 } 
+
+
+void SignalHandler(int sig)
+ {
+	if(SIGINT)
+	{
+		cout << "Please type /exit , /quit , or /part to leave the chat room" << endl;
+	}
+	return;
+ }
