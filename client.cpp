@@ -25,6 +25,7 @@
 #include <netinet/in.h>  // define internet socket
 #include <netdb.h>       // define internet socket
 #include <thread>
+
 using namespace std;
  
 #define SERVER_PORT 3932     // define a server port number 
@@ -64,11 +65,11 @@ int main()
 	cin >> clientNickname;
 	
 	//check to see that neither field was left plank
-    if(clientNickname == "") 
-    { 
-		printf("The Nickname Field was left blank!"); 
-		exit(1); 
-    }
+  if(clientNickname == "") 
+  { 
+    printf("The Nickname Field was left blank!"); 
+    exit(1); 
+  }
 	if(hostName == "")
 	{
 		printf("The hostname was left blank");

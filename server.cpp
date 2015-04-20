@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <csignal>
 #include <sys/types.h>
 #include <sys/socket.h>  // define socket 
 #include <netinet/in.h>  // define internet socket 
@@ -47,7 +48,7 @@ typedef struct Client {
 //*************  
 void error(const char *msg)
 {
-  perror(msg);
+  cerr(msg);
   exit(1);
 }
 
@@ -104,6 +105,11 @@ int main()
   //Listen to the server socket for connecting clients
   if (listen(socket_fd, 4) < 0) //Can have a max of 4 connecting clients while handling other code
     error("SERVER: Error on listen");
+    
+  // Watch for abort, terminate & interrupt signals 
+	signal(SIGABRT, &signalHandler);
+	signal(SIGTERM, &signalHandler);
+	signal(SIGINT, &signalHandler);
   
   //SERVER ACCEPT LOOP: Wait for connection and fork thread upon connection
   while ((newsocket_fd = accept(socket_fd, (struct sockaddr *) &tempClient.clientAddress, &tempClient.clientAddrLen))) 
@@ -118,21 +124,36 @@ int main()
     {
       tempClient.clientFD = newsocket_fd;
       Clients.push_back(tempClient); //Adding temp client to list
-      threads.push_back(thread(clientHandler(tempClient, &Clients, &threads))); //New Thread
+      threads.push_back(thread clientHandler(tempClient, &Clients, &threads)); //New Thread
     }
     mutex.unlock(); //Unlock
-  }
-  
-  //Interrupt Handling
-  
+  }  
   return 0;
 }
 
 void clientHandler(Client Client, vector<struct Client> * clientList, vector<thread> * threadList)
 {
   mutex mutex;
+  strcpy(Client.name, "");
+  memset(Client.buffer, '\0', sizeof(Client.buffer));
   read(Client.clientFD, Client.name, sizeof(Client.name));
-  printf("%s has entered the chat room!\n", Client.name);
+  
+  strcpy(Client.buffer, "SERVER: ");
+  strcat(Client.buffer, Client.name);
+  srtcat(Client.buffer, " has connected!");
+  
+  sendToAll(Client.buffer);
+  cout << Client.buffer << endl;
+  
+  mutex.lock();
+  for (int i = 0; i < clientList->size(); i++)
+  {
+    send(clientList[i]->clientFD, Client.buffer, strlen(Client.buffer), 0);
+  }
+  mutex.unlock();
+  memset(Client.buffer, '\0', sizeof(Client.buffer));
+  
+  
   while (read(Client.clientFD, Client.buffer, sizeof(Client.buffer)))
   {
     printf("%s: %s\n", Client.name, Client.buffer);
