@@ -49,7 +49,7 @@ int main()
 	cout << "Please enter a server name: ";
 	cin >> hostName;
 	
-	cout << "Please enter your nickname!";
+	cout << "Please enter your nickname! ";
 	cin >> clientNickname;
 	
 	//check to see that neither field was left plank
@@ -70,18 +70,18 @@ int main()
 	//get ready to connect the server
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(SERVER_PORT);
-	serverAddr.sin_addr.s_addr = INADDR_ANY;
 	
 	struct hostent* hp; 
-	
     /* get the host */
 	//if( ( hp = gethostbyname(hostName) ) == NULL )
-    if( (gethostbyname(hostName) ) == NULL ) 
+    if( (hp = gethostbyname(hostName) ) == NULL ) 
     { 
 		printf(" %s Err: unknown host\n",  hostName ); 
 		exit(1); 
     } 
-    bcopy( hp->h_addr_list[0], (char*) &serverAddr.sin_addr, hp->h_length ); 
+    bzero((char*) &serverAddr, sizeof(serverAddr));
+    bcopy( (char*)hp->h_addr, (char*) &serverAddr.sin_addr.s_addr, hp->h_length ); 
+    
  
     /* create stream socket */ 
     if( ( socketFileDescriptor = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 ) 
@@ -121,7 +121,7 @@ int main()
 	
 	shutdown(socketFileDescriptor, SHUT_RDWR);
     return(0); 
-} 
+}
 
 
 void interruptHandler(int sig)
