@@ -29,7 +29,7 @@
 
 using namespace std;
  
-#define SERVER_PORT 3932     // define a server port number 
+#define SERVER_PORT 3934     // define a server port number 
  
  //for the handling of ctrl+c
  void interruptHandler(int sig);
@@ -49,7 +49,7 @@ int main()
 	cout << "Please enter a server name: ";
 	cin >> hostName;
 	
-	cout << "Please enter your nickname! ";
+	cout << "Please enter your nickname: ";
 	cin >> clientNickname;
 	
 	//check to see that neither field was left plank
@@ -79,7 +79,7 @@ int main()
 		printf(" %s Err: unknown host\n",  hostName ); 
 		exit(1); 
     } 
-    bzero((char*) &serverAddr, sizeof(serverAddr));
+    
     bcopy( (char*)hp->h_addr, (char*) &serverAddr.sin_addr.s_addr, hp->h_length ); 
     
  
@@ -103,12 +103,13 @@ int main()
 	//send the client's nickname to the server
 	send(socketFileDescriptor, clientNickname, strlen(clientNickname), 0);
 	
-    for(;;)
+    while (true)
     { 
 		//write the username
 		cout << clientNickname << ": " ;
 		//get the messages
-		cin >> buffer;
+    //cin >> buf;
+		cin.getline(buf, sizeof(buf));
 		
 		//for the exit command 
 		if (strcmp(buf, "/exit") == 0 || strcmp(buf, "/quit") == 0 || strcmp(buf, "/part") == 0)
