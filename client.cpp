@@ -1,18 +1,8 @@
-/************************************************************************/ 
-/*   PROGRAM NAME: client.c  (works with serverX.c)                     */ 
-/*                                                                      */ 
-/*   Client creates a socket to connect to Server.                      */ 
-/*   When the communication established, Client writes data to server   */ 
-/*   and echoes the response from Server.                               */ 
-/*                                                                      */ 
-/*   To run this program, first compile the server_ex.c and run it      */ 
-/*   on a server machine. Then run the client program on another        */ 
-/*   machine.                                                           */ 
-/*                                                                      */ 
-/*   COMPILE:    gcc -o client client.c -lnsl                           */ 
-/*   TO RUN:     client  server-machine-name                            */ 
-/*                                                                      */ 
-/************************************************************************/ 
+// Jacob Gallow and Jesse Hughes
+//CS 3800
+//client.cpp
+//implements the logic for the client function
+
 #include <iostream> 
 #include <cstdlib>
 #include <csignal>
@@ -28,69 +18,67 @@
 #include <thread>
 
 using namespace std;
- 
+
+//FUNCTION PROTOTYPES--------------------------------------------------------------------------------------------
+//for the handling of ctrl+c
+void interruptHandler(int sig);
+//for the server handling
+void* readServerFeedback(void* dmyptr);
+//END PROTOTYPES ----------------------------------------------------------------------------------------------------
+
+//GLOBAL VARIABLES FOR CROSS FUNCTION VISIBLITY ------------------------------------------------------ 
 #define SERVER_PORT 3936     // define a server port number 
- 
- //for the handling of ctrl+c
- void interruptHandler(int sig);
- 
- //for the server handling
- void* readServerFeedback(void* dmyptr);
- 
- //because it has to be global for visiblity to the readServerFeedback Function
- int socketFileDescriptor; 
- 
+int socketFileDescriptor; 
+char clientNickname[64];
+char clientNameRemove[64];
+//END GLOBAL VARIABLES----------------------------------------------------------------------------------------------
+
 int main() 
 { 
-    char buf[512]; 
-	char clientNickname[64];
-	char clientRemove[64];
-	char hostName[64];
-	signal(SIGINT, &interruptHandler);//for interupt handling
-	struct sockaddr_in serverAddr;//Server Address
+    char hostName[64];
+    signal(SIGINT, &interruptHandler);//for interupt handling
+    struct sockaddr_in serverAddr;//Server Address
 	
-	//Get the server and client nickname
-	cout << "Please enter a server name: ";
-	cin >> hostName;
+    //Get the server and client nickname
+    cout << "Please enter a server name: ";
+    cin >> hostName;
 	
-	cout << "Please enter your nickname: ";
-	cin >> clientNickname;
+    cout << "Please enter your nickname: ";
+    cin >> clientNickname;
 	
 	//check to see that neither field was left plank
 
-//check that the nicknamefield isnt blank
-  if(strlen(clientNickname) == 0) 
-  { 
-  printf("The Nickname Field was left blank!"); 
-  exit(1); 
-  }
-	//check to make sure the hostname wasnt left blank
-	if(strlen(hostName) == 0)
-	{
-		printf("The hostname was left blank");
-		exit(1);
-	}
+    //check that the nicknamefield isnt blank
+    if(strlen(clientNickname) == 0) 
+    { 
+        printf("The Nickname Field was left blank!"); 
+        exit(1); 
+    }
+    //check to make sure the hostname wasnt left blank
+    if(strlen(hostName) == 0)
+    {
+        printf("The hostname was left blank");
+        exit(1);
+    }
 	
-	//get ready to connect the server
-	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_port = htons(SERVER_PORT);
+    //get ready to connect the server
+    struct sockaddr_in serverAddr;//Server Address
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(SERVER_PORT);
+    struct hostent* hp; 
 	
-	struct hostent* hp; 
     /* get the host */
-	//if( ( hp = gethostbyname(hostName) ) == NULL )
     if( (hp = gethostbyname(hostName) ) == NULL ) 
     { 
 		printf(" %s Err: unknown host\n",  hostName ); 
 		exit(1); 
     } 
-    
     bcopy( (char*)hp->h_addr, (char*) &serverAddr.sin_addr.s_addr, hp->h_length ); 
     
- 
-    /* create stream socket */ 
+     /* create stream socket */ 
     if( ( socketFileDescriptor = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 ) 
     { 
-		perror( "client: socket failed" ); 
+		perror( "client: create socket failed" ); 
 		exit( 1 ); 
     } 
     //connect it 
@@ -100,35 +88,37 @@ int main()
 		exit( 1 ); 
     } 
 	
-	//connection is succesful, let client know that they have connected to the server correctly
-    printf("connect() successful! will send a message to server\n"); 
-    printf("Input a string:\n" ); 
-	
-	//send the client's nickname to the server
-	send(socketFileDescriptor, clientNickname, strlen(clientNickname), 0);
-	
 	//prepare for input from the server
 	pthread_t fromServerThread;
 	if(pthread_create(&fromServerThread, NULL, readServerFeedback, NULL) != 0)
 	{
-		perror("Unable to read fromServerThread!");
-		shutdown(socketFileDescriptor, SHUT_RDWR);
+		perror("Unable to create the fromServerThread!");
+		close(socketFileDescriptor);
 		exit(1);
 	}
-	
-    while (true)
+		
+	//connection is succesful, let client know that they have connected to the server correctly
+    printf("connect() successful! will send a message to server\n"); 
+    printf("Type a message to broadcast it \n" ); 
+    
+	char buf[512]; 
+    
+	//send the client's nickname to the server
+	send(socketFileDescriptor, clientNickname, strlen(clientNickname), 0); //DIFF BETWEEN WRITE AND SEND???
+    
+	while (true)
     { 
 		//write the username
 		cout << clientNickname << ": " ;
 		//get the messages
-		cin.getline(buf, sizeof(buf));
+		cin.getline(buf, sizeof(buf)); //is it flawed to use a getline in this
 		
 		//for the exit command 
 		if (strcmp(buf, "/exit") == 0 || strcmp(buf, "/quit") == 0 || strcmp(buf, "/part") == 0)
 		{
 			cout << "Thank you for using this chatroom" << endl;
-      send(socketFileDescriptor, buf, strlen(buf), 0);
-			shutdown(socketFileDescriptor, SHUT_RDWR);
+			send(socketFileDescriptor, buf, strlen(buf), 0);
+			close(socketFileDescriptor);
 			exit 0;
 		}
 		
@@ -139,11 +129,14 @@ int main()
 		memset(buf, '\0', 512);
     } 
 	
-	  shutdown(socketFileDescriptor, SHUT_RDWR);
+	close(socketFileDescriptor);
     return(0); 
 }
 
 
+//FUNCTION DEFININTIONS---------------------------------------------------------------------------------------------
+
+//Handling for when user inputs ctrl+c as an attempt to exit
 void interruptHandler(int sig)
  {
 	if(SIGINT)
@@ -152,40 +145,36 @@ void interruptHandler(int sig)
 	}
 	return;
  }
-
  
  void* readServerFeedback(void* dmyptr)
 {
 	bool connectionOpen = true;
 	char lebeuof[256];
 	memset(lebeuof, '\0', 255);
-	char otherClientName[64];
-	char clearClientName[64];
-	
 	
 	while(read(socketFileDescriptor, lebeuof, 255));
 	{
+		//for when the connection is done wait 10, remove the name then quit the program
 		if(strlen(lebeuof) == 8 && strcmp(lebeuof, "* EXIT *"))
 		{
 			strcpy(lebeuof, "SERVER IS NOW CLOSING THE CONECTION!!!");
 			connectionOpen = false;
+			
+			close(socketFileDescriptor);
+			sleep(10);
+			cout << clearClientName << endl;
+			
+			exit(0);
 		}
 	
 		//show the name and clear it afterward
 		cout << clearClientName << lebeuof << endl;
 		cout << otherClientName << ": " << flush;
 		
-		//for when the connection is done wait 10, remove the name then quit the program
-		if(connectionOpen = false)
-		{
-			shutdown(socketFileDescriptor, SHUT_RDWR);
-			sleep(10);
-			cout << clearClientName << endl;
-			
-			exit(0);
-		}
 		memset(lebeuof, '\0', 255);
 	}
 	//thread is done being used
 	pthread_exit(NULL);
 }
+
+//ENDFUNCTION DEFINITIONS---------------------------------------------------------------------------------------------
