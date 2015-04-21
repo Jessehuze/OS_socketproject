@@ -15,7 +15,7 @@
 #include <vector>
 #include <mutex>
 
-#define SERVER_PORT 3935
+#define SERVER_PORT 3937
 #define MAXNUMCLIENTS 10
 
 using namespace std;

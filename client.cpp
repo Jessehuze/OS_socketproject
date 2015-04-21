@@ -28,7 +28,7 @@ void* readServerFeedback(void* dmyptr);
 //END PROTOTYPES ----------------------------------------------------------------------------------------------------
 
 //GLOBAL VARIABLES FOR CROSS FUNCTION VISIBLITY ------------------------------------------------------ 
-#define SERVER_PORT 3936     // define a server port number 
+#define SERVER_PORT 3937     // define a server port number 
 int socketFileDescriptor; 
 char clientNickname[64];
 char clientNameRemove[64];
@@ -40,16 +40,22 @@ int main()
     char hostName[64];
     signal(SIGINT, &interruptHandler);//for interupt handling
     struct sockaddr_in serverAddr;//Server Address
-	serverAddr.sin_family = AF_INET;
+	  serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(SERVER_PORT);
     struct hostent* hp; 
 	
+    
+  
     //Get the server and client nickname
     cout << "Please enter a server name: ";
     cin >> hostName;
-	
+	  
+    memset(clientNickname, '\0', sizeof(clientNickname));
     cout << "Please enter your nickname: ";
     cin >> clientNickname;
+    
+    memset(clientNameRemove, '\0', strlen(clientNameRemove));
+    memset(clientNameRemove, '\b', strlen(clientNickname) + 2);
 	
 	//check to see that neither field was left plank
 
@@ -83,7 +89,7 @@ int main()
     //connect it 
     if( connect( socketFileDescriptor, (struct sockaddr*) &serverAddr, sizeof(serverAddr) ) == -1 ) 
     { 
-		perror( "client: connect FAILED:" ); 
+		perror( "client: connect FAILED" ); 
 		exit( 1 ); 
     } 
 
@@ -108,7 +114,8 @@ int main()
 		//write the username
 		cout << clientNickname << ": " ;
 		//get the messages
-		cin.getline(buf, sizeof(buf)); //is it flawed to use a getline in this
+		//cin.getline(buf, sizeof(buf)); //is it flawed to use a getline in this
+    cin >> buf;
 		
 		//for the exit command 
 		if (strcmp(buf, "/exit") == 0 || strcmp(buf, "/quit") == 0 || strcmp(buf, "/part") == 0)
@@ -126,7 +133,53 @@ int main()
 		memset(buf, '\0', 512);
     } 
 	
-
 	close(socketFileDescriptor);
-  return(0); 
+    return(0); 
 }
+
+
+//FUNCTION DEFININTIONS---------------------------------------------------------------------------------------------
+
+//Handling for when user inputs ctrl+c as an attempt to exit
+void interruptHandler(int sig)
+ {
+	if(SIGINT)
+	{
+		cout << "Please type /exit , /quit , or /part to leave the chat room" << endl;
+	}
+	return;
+ }
+ 
+ void* readServerFeedback(void* dmyptr)
+{
+	bool connectionOpen = true;
+	char lebeuof[256];
+	memset(lebeuof, '\0', 255);
+	
+	while(read(socketFileDescriptor, lebeuof, 255))
+	{
+		//for when the connection is done wait 10, remove the name then quit the program
+		if(strlen(lebeuof) == 8 && strcmp(lebeuof, "* EXIT *"))
+		{
+			strcpy(lebeuof, "SERVER IS NOW CLOSING THE CONECTION!!!");
+			connectionOpen = false;
+			
+			close(socketFileDescriptor);
+			sleep(10);
+			cout << clientNameRemove << endl;
+			
+			exit(0);
+		}
+	
+		//show the name and clear it afterward
+		cout << clientNameRemove << lebeuof << endl;
+		cout << clientNickname << ": " << flush;
+		
+		memset(lebeuof, '\0', 256);
+
+	}
+	//thread is done being used
+	pthread_exit(NULL);
+}
+
+//ENDFUNCTION DEFINITIONS---------------------------------------------------------------------------------------------
