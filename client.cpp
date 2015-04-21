@@ -29,7 +29,7 @@
 
 using namespace std;
  
-#define SERVER_PORT 3936     // define a server port number 
+#define SERVER_PORT 3935     // define a server port number 
  
  //for the handling of ctrl+c
  void interruptHandler(int sig);
@@ -96,7 +96,7 @@ int main()
     //connect it 
     if( connect( socketFileDescriptor, (struct sockaddr*) &serverAddr, sizeof(serverAddr) ) == -1 ) 
     { 
-		perror( "client: connect FAILED" ); 
+		perror( "client: connect FAILED:" ); 
 		exit( 1 ); 
     } 
 	
@@ -121,15 +121,15 @@ int main()
 		//write the username
 		cout << clientNickname << ": " ;
 		//get the messages
+    //cin >> buf;
 		cin.getline(buf, sizeof(buf));
 		
 		//for the exit command 
 		if (strcmp(buf, "/exit") == 0 || strcmp(buf, "/quit") == 0 || strcmp(buf, "/part") == 0)
 		{
 			cout << "Thank you for using this chatroom" << endl;
-      send(socketFileDescriptor, buf, strlen(buf), 0);
 			shutdown(socketFileDescriptor, SHUT_RDWR);
-			exit 0;
+			return 0;
 		}
 		
 		//send the message
@@ -139,7 +139,7 @@ int main()
 		memset(buf, '\0', 512);
     } 
 	
-	  shutdown(socketFileDescriptor, SHUT_RDWR);
+	shutdown(socketFileDescriptor, SHUT_RDWR);
     return(0); 
 }
 
@@ -163,7 +163,7 @@ void interruptHandler(int sig)
 	char clearClientName[64];
 	
 	
-	while(read(socketFileDescriptor, lebeuof, 255));
+	while(read(socketFileDescriptor, lebeuof, 255))
 	{
 		if(strlen(lebeuof) == 8 && strcmp(lebeuof, "* EXIT *"))
 		{
@@ -176,7 +176,7 @@ void interruptHandler(int sig)
 		cout << otherClientName << ": " << flush;
 		
 		//for when the connection is done wait 10, remove the name then quit the program
-		if(connectionOpen = false)
+		if(connectionOpen == false)
 		{
 			shutdown(socketFileDescriptor, SHUT_RDWR);
 			sleep(10);

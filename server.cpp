@@ -15,7 +15,7 @@
 #include <vector>
 #include <mutex>
 
-#define SERVER_PORT 3936
+#define SERVER_PORT 3935
 #define MAXNUMCLIENTS 10
 
 using namespace std;
@@ -54,13 +54,13 @@ void error(const char *msg)
 
 void signalHandler(int signal);
 
-void clientHandler(Client& Client, vector <struct Client*>& clientList, vector<thread*>& threadList);
+void clientHandler(Client& Client, vector<thread*>& threadList);
 
 //***************
 //    Globals
 //***************
 //Client List
-vector<Client*> clientList;
+vector<Client> clientList;
 
 //Thread Vector
 vector<thread> threads;
@@ -139,8 +139,8 @@ int main()
     else
     {
       tempClient.clientFD = newsocket_fd;
-      clientList.push_back(&tempClient); //Adding temp client to list
-      thread temp([&] {clientHandler(std::ref(tempClient), std::ref(clientList), std::ref(threads));});
+      clientList.push_back(tempClient); //Adding temp client to list
+      thread temp([&] {clientHandler(std::ref(tempClient), std::ref(threads));});
       temp.detach();
       threads.push_back(&temp); //New Thread
     }
@@ -153,14 +153,14 @@ int main()
   return 0;
 }
 
-void clientHandler(Client& Client, vector<struct Client*>& clientList, vector<thread*>& threadList)
+void clientHandler(Client& Client, vector<thread*>& threadList)
 {
   //cout << "Started thread" << endl;
   mutex mutex;
   bzero((char *) &Client.name, sizeof(Client.name));
-  //bzero((char *) &Client.buffer, sizeof(Client.buffer));
+  bzero((char *) &Client.buffer, sizeof(Client.buffer));
   //strcpy(Client.name, "");
-  memset(Client.buffer, '\0', sizeof(Client.buffer));
+  //memset(Client.buffer, '\0', sizeof(Client.buffer));
   read(Client.clientFD, Client.name, sizeof(Client.name));
   
   strcpy(Client.buffer, "SERVER: ");
@@ -172,7 +172,7 @@ void clientHandler(Client& Client, vector<struct Client*>& clientList, vector<th
   mutex.lock();
   for (int i = 0; i < clientList.size(); i++)
   {
-    send(clientList[i]->clientFD, Client.buffer, strlen(Client.buffer), 0);
+    send(clientList[i].clientFD, Client.buffer, strlen(Client.buffer), 0);
   }
   mutex.unlock();
   
@@ -189,9 +189,9 @@ void clientHandler(Client& Client, vector<struct Client*>& clientList, vector<th
     mutex.lock();
     for (int i = 0; i < clientList.size(); i++)
     {
-      if (clientList[i]->clientFD != Client.clientFD)
+      if (clientList[i].clientFD != Client.clientFD)
       {
-        send(clientList[i]->clientFD, Client.buffer, strlen(Client.buffer), 0);
+        send(clientList[i].clientFD, Client.buffer, strlen(Client.buffer), 0);
       }
     }
     mutex.unlock();
@@ -209,9 +209,9 @@ void clientHandler(Client& Client, vector<struct Client*>& clientList, vector<th
   mutex.lock();
   for (int i = 0; i < clientList.size(); i++)
   {
-    if (clientList[i]->clientFD != Client.clientFD)
+    if (clientList[i].clientFD != Client.clientFD)
     {
-      send(clientList[i]->clientFD, Client.buffer, strlen(Client.buffer), 0);
+      send(clientList[i].clientFD, Client.buffer, strlen(Client.buffer), 0);
     }
   }
   
@@ -219,7 +219,7 @@ void clientHandler(Client& Client, vector<struct Client*>& clientList, vector<th
   
   for (int i = 0; i < clientList.size(); i++)
   {
-    if (clientList[i]->clientFD == Client.clientFD)
+    if (clientList[i].clientFD == Client.clientFD)
     {
       clientList.erase(clientList.begin() + i);
       threadList.erase(threadList.begin() + i);
@@ -240,7 +240,7 @@ void signalHandler(int signal)
   mutex.lock();
   for (int i = 0; i < clientList.size(); i++)
   {
-    send(clientList[i]->clientFD, message, strlen(message), 0);
+    send(clientList[i].clientFD, message, strlen(message), 0);
   }
   mutex.unlock();
   
