@@ -163,8 +163,14 @@ void interruptHandler(int sig)
 	char clearClientName[64];
 	
 	
-	while(read(SocketFileDescriptor, lebeouf, 255);
+	while(read(SocketFileDescriptor, lebeuof, 255);
 	{
+		if(str(lebeuof) = 8 && strcmp(lebeuof, "* EXIT *")
+		{
+			strcpy(lebeuof, "SERVER IS NOW CLOSING THE CONECTION!!!");
+			connectionOpen = false;
+		}
+	
 		//show the name and clear it afterward
 		cout << clearClientName << lebeuof << endl;
 		cout << otherClientName << ": " << flush;
