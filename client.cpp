@@ -33,15 +33,19 @@ using namespace std;
  
  //for the handling of ctrl+c
  void interruptHandler(int sig);
-  
+ 
+ //for the server handling
+ void* readServerFeedback(void* dmyptr);
+ 
+ //because it has to be global for visiblity to the readServerFeedback Function
+ int socketFileDescriptor; 
+ 
 int main() 
 { 
-    int socketFileDescriptor; 
     char buf[512]; 
 	char clientNickname[64];
 	char clientRemove[64];
 	char hostName[64];
-	thread fromServerThread; // waits for input from server and prints it to the screen
 	signal(SIGINT, &interruptHandler);//for interupt handling
 	struct sockaddr_in serverAddr;//Server Address
 	
@@ -103,6 +107,15 @@ int main()
 	//send the client's nickname to the server
 	send(socketFileDescriptor, clientNickname, strlen(clientNickname), 0);
 	
+	//prepare for input from the server
+	pthread_t fromServerThread;
+	if(pthread_create(&fromServerThread, NULL, readServerFeedback, NULL) != 0)
+	{
+		perror("Unable to read fromServerThread!");
+		shutdown(socketFileDescriptor, SHUT_RDWR);
+		exit(1);
+	}
+	
     while (true)
     { 
 		//write the username
@@ -139,3 +152,40 @@ void interruptHandler(int sig)
 	}
 	return;
  }
+
+ 
+ void* readServerFeedback(void* dmyptr)
+{
+	bool connectionOpen = true;
+	char lebeuof[256];
+	memset(lebeuof, '\0', 255);
+	char otherClientName[64];
+	char clearClientName[64];
+	
+	
+	while(read(socketFileDescriptor, lebeuof, 255));
+	{
+		if(strlen(lebeuof) == 8 && strcmp(lebeuof, "* EXIT *"))
+		{
+			strcpy(lebeuof, "SERVER IS NOW CLOSING THE CONECTION!!!");
+			connectionOpen = false;
+		}
+	
+		//show the name and clear it afterward
+		cout << clearClientName << lebeuof << endl;
+		cout << otherClientName << ": " << flush;
+		
+		//for when the connection is done wait 10, remove the name then quit the program
+		if(connectionOpen = false)
+		{
+			shutdown(socketFileDescriptor, SHUT_RDWR);
+			sleep(10);
+			cout << clearClientName << endl;
+			
+			exit(0);
+		}
+		memset(lebeuof, '\0', 255);
+	}
+	//thread is done being used
+	pthread_exit(NULL);
+}
