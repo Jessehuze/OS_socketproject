@@ -54,7 +54,7 @@ void error(const char *msg)
 
 void signalHandler(int signal);
 
-void clientHandler(Client& Client, vector<thread*>& threadList);
+void clientHandler(Client Client, vector<thread*>& threadList);
 
 //***************
 //    Globals
@@ -140,7 +140,7 @@ int main()
     {
       tempClient.clientFD = newsocket_fd;
       clientList.push_back(tempClient); //Adding temp client to list
-      thread temp([&] {clientHandler(std::ref(tempClient), std::ref(threads));});
+      thread temp([&] {clientHandler(tempClient, std::ref(threads));});
       temp.detach();
       threads.push_back(&temp); //New Thread
     }
@@ -153,7 +153,7 @@ int main()
   return 0;
 }
 
-void clientHandler(Client& Client, vector<thread*>& threadList)
+void clientHandler(Client Client, vector<thread*>& threadList)
 {
   //cout << "Started thread" << endl;
   mutex mutex;
@@ -246,7 +246,7 @@ void signalHandler(int signal)
   
   cout << "\b\bServer is shutting down..." << endl;
   
-  sleep(1);
+  sleep(10);
   
   shutdown(socket_fd, SHUT_RDWR);
   

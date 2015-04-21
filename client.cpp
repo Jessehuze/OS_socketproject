@@ -75,22 +75,22 @@ int main()
     /* get the host */
     if( (hp = gethostbyname(hostName) ) == NULL ) 
     { 
-		printf(" %s Err: unknown host\n",  hostName ); 
-		exit(1); 
+      printf(" %s Err: unknown host\n",  hostName ); 
+      exit(1); 
     } 
     bcopy( (char*)hp->h_addr, (char*) &serverAddr.sin_addr.s_addr, hp->h_length ); 
     
      /* create stream socket */ 
     if( ( socketFileDescriptor = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 ) 
     { 
-		perror( "client: create socket failed" ); 
-		exit( 1 ); 
+      perror( "client: create socket failed" ); 
+      exit( 1 ); 
     } 
     //connect it 
     if( connect( socketFileDescriptor, (struct sockaddr*) &serverAddr, sizeof(serverAddr) ) == -1 ) 
     { 
-		perror( "client: connect FAILED" ); 
-		exit( 1 ); 
+      perror( "client: connect FAILED" ); 
+      exit( 1 ); 
     } 
 
 	if(pthread_create(&fromServerThread, NULL, readServerFeedback, NULL) != 0)
@@ -117,26 +117,25 @@ int main()
 		//cin.getline(buf, sizeof(buf)); //is it flawed to use a getline in this
     cin >> buf;
 		
-		//for the exit command 
-		if (strcmp(buf, "/exit") == 0 || strcmp(buf, "/quit") == 0 || strcmp(buf, "/part") == 0)
-		{
-			cout << "Thank you for using this chatroom" << endl;
-			send(socketFileDescriptor, buf, strlen(buf), 0);
-			close(socketFileDescriptor);
-			exit ( 0 );
-		}
+      //for the exit command 
+      if (strcmp(buf, "/exit") == 0 || strcmp(buf, "/quit") == 0 || strcmp(buf, "/part") == 0)
+      {
+        cout << "Thank you for using this chatroom" << endl;
+        send(socketFileDescriptor, buf, strlen(buf), 0);
+        close(socketFileDescriptor);
+        exit ( 0 );
+      }
 		
-		//send the message
-		send(socketFileDescriptor, buf, strlen(buf), 0);
+      //send the message
+      send(socketFileDescriptor, buf, strlen(buf), 0);
 		
-		//clear the buffer for the next message
-		memset(buf, '\0', 512);
+      //clear the buffer for the next message
+      memset(buf, '\0', 512);
     } 
 	
 	close(socketFileDescriptor);
-    return(0); 
+  return(0); 
 }
-
 
 //FUNCTION DEFININTIONS---------------------------------------------------------------------------------------------
 
@@ -145,7 +144,8 @@ void interruptHandler(int sig)
  {
 	if(SIGINT)
 	{
-		cout << "Please type /exit , /quit , or /part to leave the chat room" << endl;
+		cout << endl << "Please type /exit , /quit , or /part to leave the chat room" << endl;
+    cout << clientNickname << ": ";
 	}
 	return;
  }
@@ -159,13 +159,14 @@ void interruptHandler(int sig)
 	while(read(socketFileDescriptor, lebeuof, 255))
 	{
 		//for when the connection is done wait 10, remove the name then quit the program
-		if(strlen(lebeuof) == 8 && strcmp(lebeuof, "* EXIT *"))
+		if(strlen(lebeuof) == 8 && !(strcmp(lebeuof, "* EXIT *")))
 		{
 			strcpy(lebeuof, "SERVER IS NOW CLOSING THE CONECTION!!!");
-			connectionOpen = false;
+      cout << lebeuof << endl;
 			
-			close(socketFileDescriptor);
 			sleep(10);
+			connectionOpen = false;
+			close(socketFileDescriptor);
 			cout << clientNameRemove << endl;
 			
 			exit(0);
