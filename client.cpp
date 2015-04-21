@@ -37,14 +37,15 @@ using namespace std;
  //for the server handling
  void* readServerFeedback(void* dmyptr);
  
+ //because it has to be global for visiblity to the readServerFeedback Function
+ int socketFileDescriptor; 
+ 
 int main() 
 { 
-    int socketFileDescriptor; 
     char buf[512]; 
 	char clientNickname[64];
 	char clientRemove[64];
 	char hostName[64];
-	thread fromServerThread; // waits for input from server and prints it to the screen
 	signal(SIGINT, &interruptHandler);//for interupt handling
 	struct sockaddr_in serverAddr;//Server Address
 	
@@ -108,7 +109,7 @@ int main()
 	
 	//prepare for input from the server
 	pthread_t fromServerThread;
-	if(pthread_create(&fromServerThread, readServerFeedback, Null) != 0)
+	if(pthread_create(&fromServerThread, readServerFeedback, NULL) != 0)
 	{
 		perror("Unable to read fromServerThread!");
 		shutdown(socketFileDescriptor, SHUT_RDWR);
@@ -157,7 +158,7 @@ void interruptHandler(int sig)
 {
 	bool connectionOpen = true;
 	char lebeuof[256];
-	memset(lebeuof, '\0', 255)
+	memset(lebeuof, '\0', 255);
 	char otherClientName[64];
 	char clearClientName[64];
 	
