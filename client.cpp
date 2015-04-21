@@ -109,7 +109,7 @@ int main()
 	
 	//prepare for input from the server
 	pthread_t fromServerThread;
-	if(pthread_create(&fromServerThread, readServerFeedback, NULL) != 0)
+	if(pthread_create(&fromServerThread, NULL, readServerFeedback, NULL) != 0)
 	{
 		perror("Unable to read fromServerThread!");
 		shutdown(socketFileDescriptor, SHUT_RDWR);
@@ -163,9 +163,9 @@ void interruptHandler(int sig)
 	char clearClientName[64];
 	
 	
-	while(read(SocketFileDescriptor, lebeuof, 255);
+	while(read(socketFileDescriptor, lebeuof, 255));
 	{
-		if(str(lebeuof) = 8 && strcmp(lebeuof, "* EXIT *")
+		if(strlen(lebeuof) == 8 && strcmp(lebeuof, "* EXIT *"))
 		{
 			strcpy(lebeuof, "SERVER IS NOW CLOSING THE CONECTION!!!");
 			connectionOpen = false;
@@ -178,13 +178,13 @@ void interruptHandler(int sig)
 		//for when the connection is done wait 10, remove the name then quit the program
 		if(connectionOpen = false)
 		{
-			shutdown(socketfd, SHUT_RDWR);
+			shutdown(socketFileDescriptor, SHUT_RDWR);
 			sleep(10);
 			cout << clearClientName << endl;
 			
 			exit(0);
 		}
-		memset(lebeouf, '\0', 255);
+		memset(lebeuof, '\0', 255);
 	}
 	//thread is done being used
 	pthread_exit(NULL);
