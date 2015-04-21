@@ -15,7 +15,7 @@
 #include <vector>
 #include <mutex>
 
-#define SERVER_PORT 3934
+#define SERVER_PORT 3936
 #define MAXNUMCLIENTS 10
 
 using namespace std;
@@ -131,7 +131,7 @@ int main()
   {
     if (newsocket_fd < 0)
       error("SERVER: Accept failed"); //Exit Program
-    cout << "Client Accepted!" << endl;
+    //cout << "Client Accepted!" << endl;
     //Lock Variables
     mutex.lock();
     if (clientList.size() >= MAXNUMCLIENTS)
@@ -141,20 +141,21 @@ int main()
       tempClient.clientFD = newsocket_fd;
       clientList.push_back(&tempClient); //Adding temp client to list
       thread temp([&] {clientHandler(std::ref(tempClient), std::ref(clientList), std::ref(threads));});
-      temp.join();
+      temp.detach();
       threads.push_back(&temp); //New Thread
-      cout << "thread added!" << endl;
     }
     mutex.unlock(); //Unlock
   }  
   
   shutdown(socket_fd, SHUT_RDWR);
+  mutex.lock();
+  mutex.unlock();
   return 0;
 }
 
 void clientHandler(Client& Client, vector<struct Client*>& clientList, vector<thread*>& threadList)
 {
-  cout << "Started thread" << endl;
+  //cout << "Started thread" << endl;
   mutex mutex;
   bzero((char *) &Client.name, sizeof(Client.name));
   //bzero((char *) &Client.buffer, sizeof(Client.buffer));
@@ -176,7 +177,7 @@ void clientHandler(Client& Client, vector<struct Client*>& clientList, vector<th
   mutex.unlock();
   
   char tempBuffer[512];
-  while (read(Client.clientFD, tempBuffer, sizeof(tempBuffer)))
+  while (read(Client.clientFD, tempBuffer, sizeof(tempBuffer)) > 0)
   {
     memset(Client.buffer, '\0', sizeof(Client.buffer));
     strcpy(Client.buffer, Client.name);
@@ -193,7 +194,7 @@ void clientHandler(Client& Client, vector<struct Client*>& clientList, vector<th
         send(clientList[i]->clientFD, Client.buffer, strlen(Client.buffer), 0);
       }
     }
-    mutex.detach();
+    mutex.unlock();
     memset(tempBuffer, '\0', sizeof(tempBuffer));
   }
   
@@ -213,18 +214,20 @@ void clientHandler(Client& Client, vector<struct Client*>& clientList, vector<th
       send(clientList[i]->clientFD, Client.buffer, strlen(Client.buffer), 0);
     }
   }
-  mutex.unlock();
+  
+  shutdown(Client.clientFD, SHUT_RDWR);
   
   for (int i = 0; i < clientList.size(); i++)
   {
     if (clientList[i]->clientFD == Client.clientFD)
     {
       clientList.erase(clientList.begin() + i);
-      threadList[i]->detach();
       threadList.erase(threadList.begin() + i);
       break;
     }
   }
+  mutex.unlock();
+  return;
 }
 
 //SIGNAL HANDLER
@@ -232,7 +235,7 @@ void signalHandler(int signal)
 {
   char message[16];
   mutex mutex;
-  strcpy(message, "Server is shutting down in 10 seconds!");
+  strcpy(message, "* EXIT *");
   
   mutex.lock();
   for (int i = 0; i < clientList.size(); i++)

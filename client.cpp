@@ -29,7 +29,7 @@
 
 using namespace std;
  
-#define SERVER_PORT 3934     // define a server port number 
+#define SERVER_PORT 3936     // define a server port number 
  
  //for the handling of ctrl+c
  void interruptHandler(int sig);
@@ -92,7 +92,7 @@ int main()
     //connect it 
     if( connect( socketFileDescriptor, (struct sockaddr*) &serverAddr, sizeof(serverAddr) ) == -1 ) 
     { 
-		perror( "client: connect FAILED:" ); 
+		perror( "client: connect FAILED" ); 
 		exit( 1 ); 
     } 
 	
@@ -108,15 +108,15 @@ int main()
 		//write the username
 		cout << clientNickname << ": " ;
 		//get the messages
-    //cin >> buf;
 		cin.getline(buf, sizeof(buf));
 		
 		//for the exit command 
 		if (strcmp(buf, "/exit") == 0 || strcmp(buf, "/quit") == 0 || strcmp(buf, "/part") == 0)
 		{
 			cout << "Thank you for using this chatroom" << endl;
+      send(socketFileDescriptor, buf, strlen(buf), 0);
 			shutdown(socketFileDescriptor, SHUT_RDWR);
-			return 0;
+			exit 0;
 		}
 		
 		//send the message
@@ -126,7 +126,7 @@ int main()
 		memset(buf, '\0', 512);
     } 
 	
-	shutdown(socketFileDescriptor, SHUT_RDWR);
+	  shutdown(socketFileDescriptor, SHUT_RDWR);
     return(0); 
 }
 
