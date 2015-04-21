@@ -32,6 +32,7 @@ void* readServerFeedback(void* dmyptr);
 int socketFileDescriptor; 
 char clientNickname[64];
 char clientNameRemove[64];
+pthread_t fromServerThread;
 //END GLOBAL VARIABLES----------------------------------------------------------------------------------------------
 
 int main() 
@@ -85,9 +86,7 @@ int main()
 		perror( "client: connect FAILED" ); 
 		exit( 1 ); 
     } 
-	
-	//prepare for input from the server
-	pthread_t fromServerThread;
+
 	if(pthread_create(&fromServerThread, NULL, readServerFeedback, NULL) != 0)
 	{
 		perror("Unable to create the fromServerThread!");
