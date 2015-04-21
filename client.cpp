@@ -38,6 +38,9 @@ int main()
     char hostName[64];
     signal(SIGINT, &interruptHandler);//for interupt handling
     struct sockaddr_in serverAddr;//Server Address
+	serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(SERVER_PORT);
+    struct hostent* hp; 
 	
     //Get the server and client nickname
     cout << "Please enter a server name: ";
@@ -60,13 +63,7 @@ int main()
         printf("The hostname was left blank");
         exit(1);
     }
-	
-    //get ready to connect the server
-    struct sockaddr_in serverAddr;//Server Address
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(SERVER_PORT);
-    struct hostent* hp; 
-	
+	  	
     /* get the host */
     if( (hp = gethostbyname(hostName) ) == NULL ) 
     { 
@@ -119,7 +116,7 @@ int main()
 			cout << "Thank you for using this chatroom" << endl;
 			send(socketFileDescriptor, buf, strlen(buf), 0);
 			close(socketFileDescriptor);
-			exit 0;
+			exit ( 0 );
 		}
 		
 		//send the message
@@ -162,14 +159,14 @@ void interruptHandler(int sig)
 			
 			close(socketFileDescriptor);
 			sleep(10);
-			cout << clearClientName << endl;
+			cout << clientNameRemove << endl;
 			
 			exit(0);
 		}
 	
 		//show the name and clear it afterward
-		cout << clearClientName << lebeuof << endl;
-		cout << otherClientName << ": " << flush;
+		cout << clientNameRemove << lebeuof << endl;
+		cout << clientNickname << ": " << flush;
 		
 		memset(lebeuof, '\0', 255);
 	}
