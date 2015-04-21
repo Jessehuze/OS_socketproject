@@ -6,6 +6,7 @@
 #include <iostream> 
 #include <cstdlib>
 #include <csignal>
+#include <cstring>
 #include <sys/types.h> 
 #include <unistd.h>
 #include <stdlib.h>
