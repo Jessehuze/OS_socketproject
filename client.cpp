@@ -33,7 +33,10 @@ using namespace std;
  
  //for the handling of ctrl+c
  void interruptHandler(int sig);
-  
+ 
+ //for the server handling
+ void* readServerFeedback(void* dmyptr);
+ 
 int main() 
 { 
     int socketFileDescriptor; 
@@ -103,6 +106,15 @@ int main()
 	//send the client's nickname to the server
 	send(socketFileDescriptor, clientNickname, strlen(clientNickname), 0);
 	
+	//prepare for input from the server
+	pthread_t fromServerThread;
+	if(pthread_create(&fromServerThread, readServerFeedback, Null) != 0)
+	{
+		perror("Unable to read fromServerThread!");
+		shutdown(socketFileDescriptor, SHUT_RDWR);
+		exit(1);
+	}
+	
     while (true)
     { 
 		//write the username
@@ -139,3 +151,34 @@ void interruptHandler(int sig)
 	}
 	return;
  }
+
+ 
+ void* readServerFeedback(void* dmyptr)
+{
+	bool connectionOpen = true;
+	char lebeuof[256];
+	memset(lebeuof, '\0', 255)
+	char otherClientName[64];
+	char clearClientName[64];
+	
+	
+	while(read(SocketFileDescriptor, lebeouf, 255);
+	{
+		//show the name and clear it afterward
+		cout << clearClientName << lebeuof << endl;
+		cout << otherClientName << ": " << flush;
+		
+		//for when the connection is done wait 10, remove the name then quit the program
+		if(connectionOpen = false)
+		{
+			shutdown(socketfd, SHUT_RDWR);
+			sleep(10);
+			cout << clearClientName << endl;
+			
+			exit(0);
+		}
+		memset(lebeouf, '\0', 255);
+	}
+	//thread is done being used
+	pthread_exit(NULL);
+}
